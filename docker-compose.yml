@@ -1,0 +1,58 @@
+version: "3.8"
+services:
+  api:
+    image: ghcr.io/maratsahakyan/nest-order-service
+    build:
+      dockerfile: dockerfile
+    container_name: api
+    depends_on:
+      - postgres
+    restart: always
+    init: true
+    environment:
+      - DB_TYPE=postgres
+      - POSTGRES_HOST=db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=ssssss
+      - POSTGRES_DB=order-service
+      - POSTGRES_PORT=5432
+    ports:
+      - "5051:4004"
+
+  frontend:
+    image: ghcr.io/maratsahakyan/vue-order-service
+    container_name: frontend
+    init: true
+    environment:
+      NODE_ENV: "production"
+      BACAKAND_URL: "http://nginx/api"
+    volumes:
+      - public:/app/public
+
+  postgres:
+    container_name: postgres
+    image: postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=ssssss
+      - POSTGRES_DB=order-service
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "81:8081"
+    links:
+      - api
+      - frontend
+    depends_on:
+      - api
+      - frontend
+    # volumes:
+    #   - ./nginx-conf/:/etc/nginx/conf.d/
+    #   - public:/app/build:ro
+
+volumes:
+  public:

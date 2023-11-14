@@ -1,0 +1,6 @@
+[submodule "vue-order-service"]
+	path = vue-order-service
+	url = https://github.com/MaratSahakyan/vue-order-service
+[submodule "nest-order-service"]
+	path = nest-order-service
+	url = https://github.com/MaratSahakyan/nest-order-service
