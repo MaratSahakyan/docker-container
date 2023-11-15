@@ -1,58 +1,62 @@
 version: "3.8"
 services:
-  api:
-    image: ghcr.io/maratsahakyan/nest-order-service
+  nestjs_app:
     build:
-      dockerfile: dockerfile
-    container_name: api
+      context: .
+      dockerfile: dockerfiles/back.dockerfile
+    image: nestjs_app
+    container_name: nestjs_app
+    restart: always
     depends_on:
       - postgres
-    restart: always
-    init: true
-    environment:
-      - DB_TYPE=postgres
-      - POSTGRES_HOST=db
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=ssssss
-      - POSTGRES_DB=order-service
-      - POSTGRES_PORT=5432
-    ports:
-      - "5051:4004"
+    env_file:
+      - .env
 
   frontend:
-    image: ghcr.io/maratsahakyan/vue-order-service
+    build:
+      context: .
+      dockerfile: dockerfiles/front.dockerfile
+    image: frontend
     container_name: frontend
     init: true
     environment:
-      NODE_ENV: "production"
-      BACAKAND_URL: "http://nginx/api"
+      NODE_ENV: "stage"
+    ports:
+      - "8082:8081"
     volumes:
       - public:/app/public
 
   postgres:
-    container_name: postgres
-    image: postgres
+    image: postgres:16.1
+    container_name: nestjs_postgres
     restart: always
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=ssssss
-      - POSTGRES_DB=order-service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 221414
+      POSTGRES_DB: order-service
     volumes:
-      - ./postgres-data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   nginx:
     image: nginx:latest
     ports:
-      - "81:8081"
+      - "8081:80"
+    restart: always
     links:
-      - api
+      - nestjs_app
       - frontend
     depends_on:
-      - api
+      - nestjs_app
       - frontend
-    # volumes:
-    #   - ./nginx-conf/:/etc/nginx/conf.d/
-    #   - public:/app/build:ro
+    volumes:
+      - ./nginx-conf:/etc/nginx/conf.d/
+      - public:/app/build:ro
 
 volumes:
   public:
+  postgres_data:
